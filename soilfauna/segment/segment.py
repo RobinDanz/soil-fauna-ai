@@ -18,8 +18,8 @@ def get_coco_generator(generators, key):
         generators[key] = (generator, category_id)
         return generators[key]
 
-def segment(model, crop_output, annotations_output, processed_output):
-    dataset = Dataset('/Users/robin/Pictures/soil-fauna-ai/selection_photos')
+def segment(model, dataset, crop_output, annotations_output, processed_output):
+    dataset = Dataset(dataset)
     sam = SAM(model)
 
     coco_generators = {}
@@ -79,9 +79,6 @@ def segment(model, crop_output, annotations_output, processed_output):
         mask_contours, _ = cv2.findContours(mask_uint8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_L1)
 
         for mask_contour in mask_contours:
-            if len(cnt) < 3:
-                continue
-
             coco_annotation.add_annotations(
                 image_id=image_id,
                 category_id=default_category_id,

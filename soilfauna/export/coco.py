@@ -1,6 +1,8 @@
 from dataclasses import dataclass, asdict, field
 from typing import List
 import cv2
+from shapely import Polygon, LinearRing
+import numpy as np
 
 @dataclass
 class CocoImage:
@@ -89,18 +91,28 @@ class CocoGenerator:
         return id
     
     def add_annotations(self, image_id, category_id, contour):
+        points = contour.reshape(-1, 2).tolist()
+        if len(points) < 3:
+            return -1
+        
+        if points[0] != points[-1]:
+            points.append(points[0])
+
+        if not LinearRing(points).is_ring:
+            return -1
+        
+        polygon = Polygon(points)
+        
         id = self.coco.annotations_count + 1
 
-        segmentation = [contour.flatten().tolist()]
-
-        bbox = self.calculate_bbox(contour)
-        area = self.calculate_area(contour)
+        bbox = self.calculate_bbox(polygon)
+        area = self.calculate_area(polygon)
 
         annotation_object = CocoAnnotation(
             id=id,
             image_id=image_id,
             category_id=category_id,
-            segmentation=segmentation,
+            segmentation=[np.array(points).reshape(-1).tolist()],
             bbox=bbox,
             iscrowd=0,
             area=area
@@ -110,13 +122,16 @@ class CocoGenerator:
 
         return id
     
-    def calculate_bbox(self, contour):
-        x, y, w, h = cv2.boundingRect(contour)
+    def calculate_bbox(self, polygon: Polygon):
+        minx, miny, maxx, maxy = polygon.bounds
 
-        return [x, y, w, h]
+        width = maxx - minx
+        height = maxy - miny
 
-    def calculate_area(self, contour):
-        return cv2.contourArea(contour)
+        return [minx, miny, width, height]
+
+    def calculate_area(self, polygon: Polygon):
+        return polygon.area
     
     def generate(self):
         return self.coco.to_dict()

@@ -180,3 +180,9 @@ pyrightconfig.json
 
 # Models files
 *.pt
+
+# Biigle fles
+biigle/*
+
+# Script results
+out/*
