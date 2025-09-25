@@ -9,27 +9,36 @@ class Dataset:
     """
     Dataset loader
     """
-    def __init__(self, path, preload=True, metadata_prefix='metadata'):
-        self.path = path
-        self.data: List[ImageData] = []
+    def __init__(self, data_path, metadata_path=None, preload=True, metadata_prefix='metadata'):
+        self.data_path = data_path
+        self.metadata_path = metadata_path
         self.metadata_prefix = metadata_prefix
+
+        self.data: List[ImageData] = []
 
         if preload:
             self.load()
 
     def load(self, with_metadata=True):
-        path = Path(self.path)
-        for dirpath, _, _ in os.walk(path):
-            image_files = list(Path(dirpath).glob("*.jpg"))
-        # image_files = list(path.glob("*.jpg"))
-        # json_files = list(path.glob(f"*{self.metadata_prefix}.json"))
+        data_path = Path(self.data_path)
+        metadata_path = None
 
-        # json_map = {f.stem.split("_")[0]: f for f in json_files}
+        if self.metadata_path:
+            metadata_path = Path(self.metadata_path)
 
-            for image in image_files:
-                self.append(
-                    ImageData(image_path=image, metadata_path=None)
-                )
+        files = list(data_path.rglob('*.jpg'))
+
+        for image in files:
+            name = image.stem
+            metadata_json = None
+
+            if metadata_path:
+                metadata_json = next(metadata_path.rglob(f'{name}{self.metadata_prefix}.json'), None)
+            
+            self.append(
+                ImageData(image_path=image, metadata_path=metadata_json)
+            )
+            
     
     def __getitem__(self, index):
         return self.data[index]
@@ -153,9 +162,6 @@ class ImageData:
                 tiles.append(tile)
         
         return tiles
-
-
-
-        
-
-
+    
+    def __str__(self):
+        return f'Image: {str(self.image_path)}, Metadata: {str(self.metadata_path)}'

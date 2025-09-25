@@ -36,8 +36,6 @@ def coco2df(coco):
     return coco_df
 
 
-
-
 if __name__ == '__main__':
     args = parser.parse_args()
 
@@ -69,20 +67,52 @@ if __name__ == '__main__':
 
     df['label_id'] = df['name'].map(labels_map)
 
-    df.to_clipboard()
-
     users_path = './biigle/users.json'
 
     with open(users_path, 'r') as f:
         users = json.load(f)
 
     df['user_id'] = users[0]['id']
+    df['confidence'] = 1
 
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     df['created_at'] = now
     df['updated_at'] = now
 
+    image_annotation_labels_cols = [
+        'annotation_id',
+        'label_id', 
+        'user_id',
+        'confidence',
+        'created_at',
+        'updated_at'
+    ]
+
+    # Dump image_annotation_labels.csv
+    df[image_annotation_labels_cols].to_csv(os.path.join(output_path, "image_annotation_labels.csv"),
+        sep=",",
+        index=False,
+        quotechar='"',
+        quoting=2
+    )
+
+    # Dump image_annotations.csv
+    df['id'] = df['annotation_id']
+    df['shape_id'] = 3
+
+    def merge_list(x):
+        res = list()
+        for i in x:
+            res.extend(i)
+        return res
+    
+    def merge_list_2(x):
+        return [i for i in x]
+
+    df['points'] = df['segmentation'].apply(merge_list_2)
+
     df.to_clipboard()
+
 
 
