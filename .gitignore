@@ -186,3 +186,6 @@ biigle/*
 
 # Script results
 out/*
+
+# Local files
+data/*

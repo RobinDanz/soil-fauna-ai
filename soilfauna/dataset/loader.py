@@ -3,7 +3,7 @@ import os
 import cv2
 import json
 from typing import List
-from image.process import apply_kmeans
+from soilfauna.image.process import apply_kmeans
 
 class Dataset:
     """

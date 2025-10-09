@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     lines = []
 
-    with open('./labels.csv', 'r') as input_file:
+    with open('/Users/robin/DEV/soil-fauna-ai/data/label_trees/newQBSlabel4.csv', 'r') as input_file:
         reader = csv.DictReader(input_file, delimiter=';', fieldnames=biigle_fieldnames)
         header = next(reader)
         for row in reader:

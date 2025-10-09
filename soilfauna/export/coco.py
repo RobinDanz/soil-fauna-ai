@@ -58,7 +58,7 @@ class CocoObject:
 
 
 class CocoGenerator:
-    DEFAULT_CATEGORY = 'undefined'
+    DEFAULT_CATEGORY = 'Unclassified'
 
     def __init__(self):
         self.coco = CocoObject()
