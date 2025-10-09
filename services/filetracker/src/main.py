@@ -1,6 +1,7 @@
 import os
 import re
 from dotenv import load_dotenv
+from pathlib import Path
 
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
@@ -52,7 +53,8 @@ def build_service():
     """
     Build and return Google API service
     """
-    creds = service_account.Credentials.from_service_account_file('service_account.json', scopes=SCOPES)
+    account_path = os.path.join(Path(__file__).parent, 'service_account.json')
+    creds = service_account.Credentials.from_service_account_file(account_path, scopes=SCOPES)
 
     service = build("sheets", "v4", credentials=creds)
 
