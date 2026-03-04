@@ -40,7 +40,7 @@ def segment(config: SegmentationConfig):
         if dataset.length > 0:
             out = OutputHandler(
                 base_dir=config.base_output_dir,
-                subname=dataset.root.stem
+                subname=dataset.path.stem
             )
             
             out.generate_output_folders()

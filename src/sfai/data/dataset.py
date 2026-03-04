@@ -3,6 +3,7 @@ from pathlib import Path
 import cv2
 from dataclasses import dataclass
 from typing import List
+from PIL import Image
 
 @dataclass
 class ImageInfo:
@@ -29,34 +30,37 @@ class Dataset(ABC):
     def length(self):
         pass
     
-class ImageFolderDataset(Dataset):
+class ImageDataset(Dataset):
     """
-    Dataset implementation for an image folder
+    Dataset implementation for images
 
     Args:
-        root (Path): Path to the folder
+        path (Path): Path to a folder or a single image
         extensions (List[str], optional): Specific extensions to look for. Default is ['.jpg', '.jpeg', '.png']
     
     Attributes:
-        root (Path): Base directory
-        extensions (List[str], optional): Specific extensions to look for. Default is ['.jpg', '.jpeg', '.png']
+        path (Path): Base directory
+        images_paths (List[Path]): List of images paths of the dataset
     """
-    def __init__(self, root: Path, extensions=['.jpg', '.jpeg', '.png']):
-        self.root = root
-        self.paths = []
+    def __init__(self, path: Path, extensions=['.jpg', '.jpeg', '.png']):
+        self.path = path
+        self.images_paths = []
 
-        for p in root.iterdir():
-            if p.suffix.lower() in extensions:
-                self.paths.append(p)
+        if path.is_file() and path.suffix.lower() in extensions:
+            self.images_paths.append(path)
+        elif path.is_dir():
+            for p in path.iterdir():
+                if p.suffix.lower() in extensions:
+                    self.images_paths.append(p)
         
     def __iter__(self):
         """
         Iterates over the dataset
 
         Yields:
-            (Tuple[ImageInfo, np.ndarray]): _description_
+            (Tuple[ImageInfo, np.ndarray])
         """
-        for id, path in enumerate(self.paths, 1):
+        for id, path in enumerate(self.images_paths, 1):
             img = cv2.imread(str(path))
             
             info = ImageInfo(
@@ -72,54 +76,17 @@ class ImageFolderDataset(Dataset):
     
     @property
     def length(self):
-        return len(self.paths)
-            
-class SingleImageDataset(Dataset):
-    """
-    Dataset implementation for a single image.
-
-    Args:
-        path (Path): Path to the image
+        return len(self.images_paths)
     
-    Attributes:
-        root (Path): Root directory
-        paths (List[Path]): List of images (contains a single image by definition)
-    """
-    def __init__(self, path: Path):
-        self.root = path.parent
-        self.paths = []
-        
-        if path.is_file() and path.suffix.lower() in ['.jpg', '.jpeg', '.png']:
-            self.paths.append(path)
-            
+class TIFFImageDataset(ImageDataset):
+    def __init__(self, path):
+        super().__init__(path, extensions=['.tiff'])
+
     def __iter__(self):
-        """
-        Iterates over the dataset
+        print(self.images_paths)
 
-        Yields:
-            (Tuple[ImageInfo, np.ndarray]): _description_
-        """
-        for id, path in enumerate(self.paths, 1):
-            img = cv2.imread(str(path))
             
-            info = ImageInfo(
-                id=id,
-                name=path.stem,
-                file_name=path.name,
-                path=path,
-                height=img.shape[0],
-                width=img.shape[1]
-            )
-            
-            yield info, img
-    
-    @property
-    def length(self):
-        """
-        Number of files in the dataset
-        """
-        return len(self.paths)
-            
+   
 def generate_datasets(datasets: List[Path]) -> List[Dataset]:
     """
     Utility method to generate datasets from a list of path
@@ -133,13 +100,8 @@ def generate_datasets(datasets: List[Path]) -> List[Dataset]:
     out = []
     
     for path in datasets:
-        if path.is_file():
             out.append(
-                SingleImageDataset(path)
-            )
-        else:
-            out.append(
-                ImageFolderDataset(path)
+                ImageDataset(path)
             )
             
     return out
