@@ -138,6 +138,12 @@ class SegmentationConfig(BaseConfig):
     tile_columns: int = default.DEFAULT_TILE_COLUMNS
     hsv_lower_bound: Tuple[int, int, int] = field(default_factory=lambda: default.DEFAULT_HSV_LOWER_BOUND)
     hsv_upper_bound: Tuple[int, int, int] = field(default_factory=lambda: default.DEFAULT_HSV_UPPER_BOUND)
+    ignore_borders: str = ''
+    ignore_border_top: bool = False
+    ignore_border_bottom: bool = False
+    ignore_border_left: bool = False
+    ignore_border_right: bool = False
+    ignore_border_size: int = 200
     
     datasets: List[Path] = field(default_factory=lambda: [])
     
@@ -151,6 +157,28 @@ class SegmentationConfig(BaseConfig):
         if self.id is None:
             self.id = self._generate_id()
             
+        if self.ignore_borders:
+            self._set_ignored_borders()
+            
+    def _set_ignored_borders(self) -> Tuple[bool, bool, bool, bool]:
+        """
+        Parses the 'ignore_borders' config str. Returns a boolean for each ignored borders.
+        """
+        
+        borders_code = set(self.ignore_borders)
+        
+        out = {
+            'ignore_border_top': 't',
+            'ignore_border_bottom': 'b',
+            'ignore_border_left': 'l',
+            'ignore_border_right': 'r'
+        }
+        
+        for key, value in out.items():
+            if value in borders_code:
+                setattr(self, key, True)
+        
+        
     def _generate_id(self) -> int:
         """
         Generate run ID
@@ -171,5 +199,9 @@ class SegmentationConfig(BaseConfig):
     @property
     def base_output_dir(self) -> Path:
         return Path(os.path.join(self.output_dir, self.name, str(self.id)))
+
+@dataclass
+class IgnoreSliceConfig:
+    pass
     
     

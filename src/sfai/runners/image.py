@@ -68,7 +68,8 @@ class ImagePipelineRunner:
         start_pipeline = time.time()
 
         tile_results = TilePipelinRunner(
-            self.operators
+            self.operators,
+            self.config
         ).run(image_info, image, output_handler)
         
         end_pipeline = time.time()
@@ -87,7 +88,7 @@ class ImagePipelineRunner:
             "postprocess": end_postprocess - start_postprocess,
             "total": (end_pipeline - start_pipeline) + (end_postprocess - start_postprocess)
         }
-            
+        
         if self.config.save_final_images:
             path = output_handler.image_dir / image_info.name
             
@@ -115,11 +116,11 @@ class TilePipelinRunner:
     
     Splits an image into tiles and runs operations on each tile.
     """
-    def __init__(self, operators: List[Operator]):
+    def __init__(self, operators: List[Operator], config: SegmentationConfig):
         self.operators = operators
 
         self.pipeline = Pipeline(operators=self.operators)
-        self.tiler = ImageTiler(rows=8, cols=8)
+        self.tiler = ImageTiler(rows=config.tile_rows, cols=config.tile_columns)
         
     def run(self, image_info: ImageInfo, image: np.ndarray, output_handler: OutputHandler) -> List[TileResult]:
         tiles = self.tiler.split(image)

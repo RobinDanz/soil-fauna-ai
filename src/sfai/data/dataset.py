@@ -3,7 +3,10 @@ from pathlib import Path
 import cv2
 from dataclasses import dataclass
 from typing import List
-from PIL import Image
+from collections import defaultdict
+from sfai.config import SegmentationConfig
+
+
 
 @dataclass
 class ImageInfo:
@@ -19,39 +22,41 @@ class ImageInfo:
 
 class Dataset(ABC):
     """
-    Base abstract class for datasets.
+    Base class for datasets.
     """
+    def __init__(self, root: Path, paths: List[Path], config: SegmentationConfig):
+        self.config = config
+        self.root = root
+        self.paths = paths
+        
+    def ignore_borders(self, image):
+        border_size = self.config.ignore_border_size
+        
+        if self.config.ignore_border_top:
+            image = image[border_size:, :, :]
+        
+        if self.config.ignore_border_bottom:
+            image = image[:-border_size, :, :]
+        
+        if self.config.ignore_border_left:
+            image = image[:, border_size:, :]
+        
+        if self.config.ignore_border_right:
+            image = image[:, :-border_size, :]
+        
+        return image
+    
     @abstractmethod
     def __iter__(self):
         pass
     
-    @property
     @abstractmethod
-    def length(self):
+    def __len__(self):
         pass
     
 class ImageDataset(Dataset):
-    """
-    Dataset implementation for images
 
-    Args:
-        path (Path): Path to a folder or a single image
-        extensions (List[str], optional): Specific extensions to look for. Default is ['.jpg', '.jpeg', '.png']
-    
-    Attributes:
-        path (Path): Base directory
-        images_paths (List[Path]): List of images paths of the dataset
-    """
-    def __init__(self, path: Path, extensions=['.jpg', '.jpeg', '.png']):
-        self.path = path
-        self.images_paths = []
-
-        if path.is_file() and path.suffix.lower() in extensions:
-            self.images_paths.append(path)
-        elif path.is_dir():
-            for p in path.iterdir():
-                if p.suffix.lower() in extensions:
-                    self.images_paths.append(p)
+    EXTENSIONS = {'.jpg', '.jpeg', '.png'}
         
     def __iter__(self):
         """
@@ -60,34 +65,92 @@ class ImageDataset(Dataset):
         Yields:
             (Tuple[ImageInfo, np.ndarray])
         """
-        for id, path in enumerate(self.images_paths, 1):
-            img = cv2.imread(str(path))
-            
+        for id, path in enumerate(self.paths, 1):
+            full_path = self.root / path
+            img = cv2.imread(str(full_path))
+            print(img.shape)
+            img = self.ignore_borders(img)
+            print(img.shape)
             info = ImageInfo(
                 id=id,
-                name=path.stem,
-                file_name=path.name,
-                path=path,
+                name=full_path.stem,
+                file_name=full_path.name,
+                path=full_path,
                 height=img.shape[0],
                 width=img.shape[1]
             )
             
             yield info, img
     
-    @property
-    def length(self):
-        return len(self.images_paths)
+    def __len__(self):
+        return len(self.paths)
     
 class TIFFImageDataset(ImageDataset):
-    def __init__(self, path):
-        super().__init__(path, extensions=['.tiff'])
+    EXTENSIONS = {'.tiff', '.tif'}
 
     def __iter__(self):
-        print(self.images_paths)
+        for id, path in enumerate(self.paths, 1):
+            pass
+        
+class CompositeDataset(Dataset):
+    def __init__(self, root, datasets, config: SegmentationConfig):
+        self.datasets = datasets
 
+        paths = []
+        for d in datasets:
+            paths.extend(d.paths)
+        
+        super().__init__(root, paths, config=config)
             
-   
-def generate_datasets(datasets: List[Path]) -> List[Dataset]:
+        
+    def __iter__(self):
+        for dataset in self.datasets:
+            yield from dataset
+
+    def __len__(self):
+        return sum(len(d) for d in self.datasets)
+           
+class DatasetFactory:
+
+    DATASET_CLASSES = [ImageDataset, TIFFImageDataset]
+
+    @classmethod
+    def create(cls, path: Path, config: SegmentationConfig):
+        """
+        """
+        if path.is_file():
+            root = path.parent
+            files = [path]
+        else:
+            root = path
+            files = [p for p in path.rglob("*") if p.is_file()]
+            
+        return cls._build_datasets(root, files, config)
+
+    @classmethod
+    def _build_datasets(cls, root, files: List[Path], config: SegmentationConfig) -> Dataset:
+        groups = defaultdict(list)
+
+        for file in files:
+            ext = file.suffix.lower()
+
+            for dataset_cls in cls.DATASET_CLASSES:
+                if ext in dataset_cls.EXTENSIONS:
+                    groups[dataset_cls].append(file.relative_to(root))
+                    break
+
+        datasets = [
+            dataset_cls(root, paths, config)
+            for dataset_cls, paths in groups.items()
+        ]
+
+        if len(datasets) == 1:
+            return datasets[0]
+
+        return CompositeDataset(root, datasets, config)
+
+    
+def generate_datasets(config: SegmentationConfig) -> List[Dataset]:
     """
     Utility method to generate datasets from a list of path
     
@@ -99,12 +162,7 @@ def generate_datasets(datasets: List[Path]) -> List[Dataset]:
     """
     out = []
     
-    for path in datasets:
-            out.append(
-                ImageDataset(path)
-            )
-            
+    for path in config.datasets:
+            out.append(DatasetFactory.create(path, config))
+    
     return out
-            
-            
-                

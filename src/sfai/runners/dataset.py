@@ -52,7 +52,7 @@ class DatasetRunner:
         annotations_writer = JsonlBufferedWriter(self.output_handler.annotations_jsonl_path)
         
         for i, (image_info, image) in enumerate(self.dataset, 1):
-            LOGGER.info(f"Image: {i}/{self.dataset.length}")
+            LOGGER.info(f"Image: {i}/{len(self.dataset)}")
             coco_img = CocoImage(
                 id=image_info.id,
                 width=image_info.width,

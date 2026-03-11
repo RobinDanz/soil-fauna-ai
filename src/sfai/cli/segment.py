@@ -26,5 +26,4 @@ def run_segmentation(args):
     """
     cfg = SegmentationConfig.from_file(args.config)
     cfg.create_run_folder()
-    
     segment(cfg)
