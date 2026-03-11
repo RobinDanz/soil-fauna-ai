@@ -68,9 +68,7 @@ class ImageDataset(Dataset):
         for id, path in enumerate(self.paths, 1):
             full_path = self.root / path
             img = cv2.imread(str(full_path))
-            print(img.shape)
-            img = self.ignore_borders(img)
-            print(img.shape)
+            img = self.ignore_borders(img)          
             info = ImageInfo(
                 id=id,
                 name=full_path.stem,
