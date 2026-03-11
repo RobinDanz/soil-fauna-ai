@@ -24,7 +24,7 @@ def segment(config: SegmentationConfig):
     Args:
         config (SegmentationConfig):
     """
-    datasets = generate_datasets(config.datasets)
+    datasets = generate_datasets(config)
     LOGGER.debug('START SEGMENTATION')
     
     operators = [
@@ -37,10 +37,10 @@ def segment(config: SegmentationConfig):
     
     for i, dataset in enumerate(datasets, 1):
         LOGGER.info(f"Dataset: {i}/{len(datasets)}")
-        if dataset.length > 0:
+        if len(dataset) > 0:
             out = OutputHandler(
-                base_dir=config.base_output_dir,
-                subname=dataset.path.stem
+                config=config,
+                subname=dataset.root.stem
             )
             
             out.generate_output_folders()

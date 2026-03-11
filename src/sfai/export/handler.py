@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from sfai.config import default
+from sfai.config import SegmentationConfig
 
 
 class OutputHandler:
@@ -10,8 +10,9 @@ class OutputHandler:
         base_dir (Path, optional): Base output directory. Defaults to default.DEFAULT_OUTPUT_DIR.
         subname (str | None, optional): Subdir. Defaults to None.
     """
-    def __init__(self, base_dir: Path = default.DEFAULT_OUTPUT_DIR, subname: str | None = None):
-        self.base_dir = base_dir
+    def __init__(self, config: SegmentationConfig, subname: str | None = None):
+        self.config = config
+        self.base_dir = config.base_output_dir
         
         if subname:
             self.base_dir = self.base_dir / subname
@@ -20,11 +21,15 @@ class OutputHandler:
         """Generate output folders for annotations, crops and images.
         """
         self.annotation_dir.mkdir(parents=True, exist_ok=True)
-        self.crop_dir.mkdir(parents=True, exist_ok=True)
-        self.image_dir.mkdir(parents=True, exist_ok=True)
+        
+        if self.config.save_intermediate_images:
+            self.crop_dir.mkdir(parents=True, exist_ok=True)
+            
+        if self.config.save_final_images:
+            self.image_dir.mkdir(parents=True, exist_ok=True)
         
     def generate_crop_subfodler(self, image_name: str, subfolder: str) -> Path:
-        """Generate a subfolder for each type of crop. The folder will be generated into the 'crops' folder.
+        """Generate a subfolder for each type of crop. The folder is generated into the 'crops' folder.
 
         Args:
             image_name (str): Name of the image
