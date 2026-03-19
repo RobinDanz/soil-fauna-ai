@@ -133,11 +133,12 @@ class CocoWriter:
             List[Dict[str, Any]]: List of read objects
         """
         data = []
-        with path.open('r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    data.append(json.loads(line))
+        if path.is_file():
+            with path.open('r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        data.append(json.loads(line))
         return data
     
     def _load_images(self) -> List[CocoImage]:

@@ -38,9 +38,11 @@ class DatasetRunner:
         """
         stats = {}
         categories: List[CocoCategory] = [DEFAULT_CATEGORY]
+
+        annotation_file_name = self.dataset.root.stem + '.json'
         
-        annotation_out = self.output_handler.annotation_dir / 'result.json'
-        
+        annotation_out = self.output_handler.annotation_dir / annotation_file_name
+
         coco_writer = CocoWriter(
             self.output_handler.images_jsonl_path,
             self.output_handler.annotations_jsonl_path,
