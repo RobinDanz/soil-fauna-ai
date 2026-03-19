@@ -19,6 +19,8 @@ class ImageInfo:
     path: Path
     width: int
     height: int
+    source_height: int = 0
+    source_width: int = 0
 
 class Dataset(ABC):
     """
@@ -68,6 +70,7 @@ class ImageDataset(Dataset):
         for id, path in enumerate(self.paths, 1):
             full_path = self.root / path
             img = cv2.imread(str(full_path))
+            original_size = img.shape
             img = self.ignore_borders(img)          
             info = ImageInfo(
                 id=id,
@@ -75,7 +78,9 @@ class ImageDataset(Dataset):
                 file_name=full_path.name,
                 path=full_path,
                 height=img.shape[0],
-                width=img.shape[1]
+                width=img.shape[1],
+                source_height=original_size[0],
+                source_width=original_size[1],
             )
             
             yield info, img

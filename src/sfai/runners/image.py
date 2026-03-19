@@ -77,7 +77,28 @@ class ImagePipelineRunner:
         start_postprocess = time.time()
 
         label_image = stitcher.stitch(tiles=tile_results, image_shape=image.shape[:2])
+
+        pad_left = 0
+        pad_top = 0
+        pad = False
+
+        if self.config.ignore_border_left:
+            pad_left = self.config.ignore_border_size
+            pad = True
         
+        if self.config.ignore_border_top:
+            pad_top = self.config.ignore_border_size
+            pad = True
+
+        if pad:
+            label_image = np.pad(
+                label_image,
+                ((pad_top, 0), (pad_left, 0)),
+                mode='constant',
+                constant_values=0
+            )
+
+
         for annotation in mask_processor.build_annotations(label_image, image_id=image_info.id, category_id=1):
             annotations.append(annotation)
         

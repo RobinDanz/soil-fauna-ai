@@ -57,8 +57,8 @@ class DatasetRunner:
             LOGGER.info(f"Image: {i}/{len(self.dataset)}")
             coco_img = CocoImage(
                 id=image_info.id,
-                width=image_info.width,
-                height=image_info.height,
+                width=image_info.source_width,
+                height=image_info.source_height,
                 file_name=image_info.file_name
             )
             
